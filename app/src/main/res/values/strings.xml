@@ -1,0 +1,10 @@
+<resources>
+    <string name="app_name">awty</string>
+    <string name="texting_caption">Texting %1$s</string>
+    <string name="start">start</string>
+    <string name="stop">stop</string>
+    <string name="hint_enter_message">Enter message</string>
+    <string name="hint_enter_phone_number">Enter phone number</string>
+    <string name="hint_enter_time">Enter time in minutes</string>
+    <string name="action_start">Start</string>
+</resources>

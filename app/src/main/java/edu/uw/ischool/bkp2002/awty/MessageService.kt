@@ -8,6 +8,7 @@ import android.os.Looper
 import android.view.LayoutInflater
 import android.widget.TextView
 import android.widget.Toast
+import android.view.View
 import java.util.Timer
 import java.util.TimerTask
 
@@ -33,6 +34,12 @@ class MessageService : Service() {
 
         val timeInMillis = timeInterval * 60000L
 
+        initializeTimer(timeInMillis, message, formattedPhoneNumber)
+
+        return START_STICKY
+    }
+
+    private fun initializeTimer(timeInMillis: Long, message: String, formattedPhoneNumber: String) {
         timer?.cancel()
         timer = Timer()
 
@@ -43,8 +50,6 @@ class MessageService : Service() {
                 }
             }
         }, 0, timeInMillis)
-
-        return START_STICKY
     }
 
     private fun formatPhoneNumber(phoneNumber: String): String {
@@ -55,7 +60,6 @@ class MessageService : Service() {
             "Invalid number"
         }
     }
-
 
     override fun onBind(intent: Intent): IBinder? {
         return null
@@ -75,6 +79,10 @@ class MessageService : Service() {
         caption.text = getString(R.string.texting_caption, phoneNumber)
         body.text = message
 
+        showToast(layout)
+    }
+
+    private fun showToast(layout: View) {
         Toast(applicationContext).apply {
             duration = Toast.LENGTH_LONG
             view = layout

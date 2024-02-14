@@ -19,16 +19,23 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
+        initializeViews()
+        setupStartStopButton()
+    }
+
+    private fun initializeViews() {
         messageEditText = findViewById(R.id.editTextMessage)
         phoneNumberEditText = findViewById(R.id.editTextPhoneNumber)
         timeEditText = findViewById(R.id.editTextTime)
         startStopButton = findViewById(R.id.buttonStartStop)
+    }
 
+    private fun setupStartStopButton() {
         startStopButton.setOnClickListener {
             val message = messageEditText.text.toString()
             val phoneNumber = phoneNumberEditText.text.toString()
             val timeString = timeEditText.text.toString()
-            val time = timeEditText.text.toString().toIntOrNull()
+            val time = timeString.toIntOrNull()
 
             when {
                 message.isEmpty() -> showToast("Enter a message.")
@@ -36,19 +43,10 @@ class MainActivity : AppCompatActivity() {
                 !isPhoneNumberValid(phoneNumber) -> showToast("Enter a valid 10-digit phone number.")
                 timeString.isEmpty() -> showToast("Enter the time interval.")
                 time == null || time <= 0 -> showToast("Time interval must be a positive integer.")
-                isServiceRunning -> {
-                    stopService()
-                    startStopButton.text = getString(R.string.start)
-                    isServiceRunning = false
-                }
-                else -> {
-                    startService(message, phoneNumber, time)
-                    startStopButton.text = getString(R.string.stop)
-                    isServiceRunning = true
-                }
+                isServiceRunning -> stopService()
+                else -> startService(message, phoneNumber, time)
             }
         }
-
     }
 
     private fun isPhoneNumberValid(phoneNumber: String): Boolean {
@@ -67,14 +65,16 @@ class MainActivity : AppCompatActivity() {
             putExtra("time", time)
         }
         startService(intent)
-        startStopButton.text = getString(R.string.stop)
-        isServiceRunning = true
+        updateUIForServiceState(true)
     }
 
     private fun stopService() {
         stopService(Intent(this, MessageService::class.java))
-        startStopButton.text = getString(R.string.start)
-        isServiceRunning = false
+        updateUIForServiceState(false)
     }
 
+    private fun updateUIForServiceState(running: Boolean) {
+        startStopButton.text = if (running) getString(R.string.stop) else getString(R.string.start)
+        isServiceRunning = running
+    }
 }

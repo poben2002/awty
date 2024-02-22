@@ -1,25 +1,21 @@
 package edu.uw.ischool.bkp2002.awty
 
+import android.Manifest
 import android.app.Service
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.IBinder
 import android.os.Looper
-import android.view.LayoutInflater
-import android.widget.TextView
+import android.telephony.SmsManager
 import android.widget.Toast
-import android.view.View
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import java.util.Timer
 import java.util.TimerTask
 
 class MessageService : Service() {
     private var timer: Timer? = null
-    private lateinit var inflater: LayoutInflater
-
-    override fun onCreate() {
-        super.onCreate()
-        inflater = LayoutInflater.from(this)
-    }
 
     override fun onStartCommand(intent: Intent, flags: Int, startId: Int): Int {
         val message = intent.getStringExtra("message") ?: "Are we there yet?"
@@ -27,29 +23,44 @@ class MessageService : Service() {
         val timeInterval = intent.getIntExtra("time", 1)
 
         val formattedPhoneNumber = formatPhoneNumber(phoneNumber)
-        if (formattedPhoneNumber == "Invalid number") {
+        if (formattedPhoneNumber == "Invalid phone number") {
             stopSelf(startId)
             return START_NOT_STICKY
         }
 
         val timeInMillis = timeInterval * 60000L
 
-        initializeTimer(timeInMillis, message, formattedPhoneNumber)
+        // Check if SEND_SMS permission is granted
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+            != PackageManager.PERMISSION_GRANTED
+        ) {
+            // Permission is not granted, we cannot send SMS, so stop the service
+            Toast.makeText(this, "SEND_SMS permission is required to send SMS messages.", Toast.LENGTH_SHORT).show()
+            stopSelf(startId)
+        } else {
+            // Permission is granted, start sending SMS
+            startSendingSms(formattedPhoneNumber, message, timeInMillis)
+        }
 
         return START_STICKY
     }
 
-    private fun initializeTimer(timeInMillis: Long, message: String, formattedPhoneNumber: String) {
+    private fun startSendingSms(phoneNumber: String, message: String, intervalMillis: Long) {
         timer?.cancel()
         timer = Timer()
 
         timer?.scheduleAtFixedRate(object : TimerTask() {
             override fun run() {
                 Handler(Looper.getMainLooper()).post {
-                    showCustomToast(formattedPhoneNumber, message)
+                    sendSmsMessage(phoneNumber, message)
                 }
             }
-        }, 0, timeInMillis)
+        }, 0, intervalMillis)
+    }
+
+    private fun sendSmsMessage(phoneNumber: String, message: String) {
+        val smsManager = SmsManager.getDefault()
+        smsManager.sendTextMessage(phoneNumber, null, message, null, null)
     }
 
     private fun formatPhoneNumber(phoneNumber: String): String {
@@ -57,7 +68,7 @@ class MessageService : Service() {
         return if (digits.length == 10) {
             "(${digits.substring(0, 3)}) ${digits.substring(3, 6)}-${digits.substring(6)}"
         } else {
-            "Invalid number"
+            "Invalid phone number"
         }
     }
 
@@ -70,23 +81,21 @@ class MessageService : Service() {
         super.onDestroy()
     }
 
-    private fun showCustomToast(phoneNumber: String, message: String) {
-        val layout = inflater.inflate(R.layout.custom_toast, null)
+    override fun onCreate() {
+        super.onCreate()
 
-        val caption = layout.findViewById<TextView>(R.id.toastCaption)
-        val body = layout.findViewById<TextView>(R.id.toastBody)
-
-        caption.text = getString(R.string.texting_caption, phoneNumber)
-        body.text = message
-
-        showToast(layout)
+        // Check SEND_SMS permission at service creation
+        checkSendSmsPermission()
     }
 
-    private fun showToast(layout: View) {
-        Toast(applicationContext).apply {
-            duration = Toast.LENGTH_LONG
-            view = layout
-            show()
+    private fun checkSendSmsPermission() {
+        val permissionStatus = if (ContextCompat.checkSelfPermission(this, Manifest.permission.SEND_SMS)
+            == PackageManager.PERMISSION_GRANTED) {
+            "granted"
+        } else {
+            "not granted"
         }
+        Toast.makeText(this, "SEND_SMS permission $permissionStatus.", Toast.LENGTH_SHORT).show()
     }
+
 }

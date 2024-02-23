@@ -1,12 +1,17 @@
 package edu.uw.ischool.bkp2002.awty
-
-import android.content.Intent
-import androidx.appcompat.app.AppCompatActivity
-import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
+import android.content.Intent
+import androidx.appcompat.app.AppCompatActivity
+import android.os.Bundle
+import androidx.core.content.ContextCompat
+import android.Manifest
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.core.app.ActivityCompat
 
+private val PERMISSION_REQUEST_SEND_SMS = 123
 class MainActivity : AppCompatActivity() {
 
     private lateinit var messageEditText: EditText
@@ -21,8 +26,44 @@ class MainActivity : AppCompatActivity() {
 
         initializeViews()
         setupStartStopButton()
+        checkAndRequestPermission()
     }
 
+
+    private fun checkAndRequestPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            if (ContextCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.SEND_SMS
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // Permission is not granted, request it
+                ActivityCompat.requestPermissions(
+                    this,
+                    arrayOf(Manifest.permission.SEND_SMS),
+                    PERMISSION_REQUEST_SEND_SMS
+                )
+            }
+        }
+    }
+
+    override fun onRequestPermissionsResult(
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
+    ) {
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+
+        if (requestCode == PERMISSION_REQUEST_SEND_SMS) {
+            if (grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Permission granted
+                Toast.makeText(this, "SMS Permission Granted", Toast.LENGTH_SHORT).show()
+            } else {
+                // Permission denied
+                Toast.makeText(this, "SMS Permission Denied", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
     private fun initializeViews() {
         messageEditText = findViewById(R.id.editTextMessage)
         phoneNumberEditText = findViewById(R.id.editTextPhoneNumber)
@@ -78,3 +119,4 @@ class MainActivity : AppCompatActivity() {
         isServiceRunning = running
     }
 }
+

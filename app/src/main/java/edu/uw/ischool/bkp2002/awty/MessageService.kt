@@ -9,7 +9,6 @@ import android.os.IBinder
 import android.os.Looper
 import android.telephony.SmsManager
 import android.widget.Toast
-import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import java.util.Timer
 import java.util.TimerTask
@@ -35,10 +34,11 @@ class MessageService : Service() {
             != PackageManager.PERMISSION_GRANTED
         ) {
             // Permission is not granted, we cannot send SMS, so stop the service
-            Toast.makeText(this, "SEND_SMS permission is required to send SMS messages.", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "ERROR: SEND_SMS permission is required to send SMS messages.", Toast.LENGTH_SHORT).show()
             stopSelf(startId)
         } else {
             // Permission is granted, start sending SMS
+            Toast.makeText(this, "sending", Toast.LENGTH_SHORT).show()
             startSendingSms(formattedPhoneNumber, message, timeInMillis)
         }
 
